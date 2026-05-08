@@ -28,7 +28,7 @@ try {
         $facilities = $facility_manager->getAllFacilities();
     } else {
         // Input users can only create evaluations for facilities they created, edited, or are assigned to
-        $facilities = $facility_manager->getFacilitiesForUserEvaluation($user['user_id'], $user['facility_name'] ?? null);
+        $facilities = $facility_manager->getFacilitiesForUserEvaluation($user['user_id'], $user['facility_names'] ?? ($user['facility_name'] ?? null));
     }
 
     // Handle form submission

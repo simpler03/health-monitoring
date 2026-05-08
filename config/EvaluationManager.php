@@ -15,6 +15,16 @@ class EvaluationManager {
         $this->db = $db;
     }
 
+    private function normalizeFacilityNames($facility_names) {
+        if (empty($facility_names)) {
+            return [];
+        }
+        if (!is_array($facility_names)) {
+            $facility_names = array_map('trim', explode(',', $facility_names));
+        }
+        return array_values(array_filter(array_unique($facility_names), fn($name) => $name !== ''));
+    }
+
     /**
      * Create new evaluation and initialize score records with NULL values for all active KPIs
      */
@@ -176,18 +186,21 @@ class EvaluationManager {
      */
     public function getEvaluationsForUser($user_id, $facility_name = null, $filters = []) {
         try {
+            $facility_names = $this->normalizeFacilityNames($facility_name);
             $query = "SELECT e.*, f.name as facility_name, u.full_name as created_by_name
                       FROM " . $this->evaluations_table . " e
                       JOIN facilities f ON e.facility_id = f.id
                       LEFT JOIN users u ON e.created_by = u.id
-                      WHERE (f.creator = ? OR f.editor = ?)";
+                      WHERE (f.creator = ? OR f.editor = ?";
             
             $params = [$user_id, $user_id];
             
-            if (!empty($facility_name)) {
-                $query .= " OR f.name = ?";
-                $params[] = $facility_name;
+            if (!empty($facility_names)) {
+                $query .= " OR f.name IN (" . implode(',', array_fill(0, count($facility_names), '?')) . ")";
+                $params = array_merge($params, $facility_names);
             }
+
+            $query .= ")";
 
             if (!empty($filters['year'])) {
                 $query .= " AND e.evaluation_date LIKE ?";

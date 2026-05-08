@@ -40,7 +40,7 @@ try {
     if ($current_role === 'admin') {
         $accessible_facilities = $facility_manager->getAllFacilitiesForAdmin();
     } else {
-        $accessible_facilities = $facility_manager->getFacilitiesForUser($user['user_id'], $user['facility_name'] ?? null);
+        $accessible_facilities = $facility_manager->getFacilitiesForUser($user['user_id'], $user['facility_names'] ?? ($user['facility_name'] ?? null));
     }
     
     // Get evaluations based on user role
@@ -52,7 +52,7 @@ try {
     if ($current_role === 'admin') {
         $all_evaluations = $evaluation_manager->getEvaluations($filterOpts);
     } else {
-        $all_evaluations = $evaluation_manager->getEvaluationsForUser($user['user_id'], $user['facility_name'] ?? null, $filterOpts);
+        $all_evaluations = $evaluation_manager->getEvaluationsForUser($user['user_id'], $user['facility_names'] ?? ($user['facility_name'] ?? null), $filterOpts);
     }
     
     // Build facility map

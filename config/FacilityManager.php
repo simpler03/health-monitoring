@@ -12,6 +12,16 @@ class FacilityManager {
         $this->db = $db;
     }
 
+    private function normalizeFacilityNames($facility_names) {
+        if (empty($facility_names)) {
+            return [];
+        }
+        if (!is_array($facility_names)) {
+            $facility_names = array_map('trim', explode(',', $facility_names));
+        }
+        return array_values(array_filter(array_unique($facility_names), fn($name) => $name !== ''));
+    }
+
     /**
      * Create facility
      */
@@ -143,15 +153,16 @@ class FacilityManager {
      */
     public function getFacilitiesForUserEvaluation($user_id, $facility_name = null) {
         try {
-            $query = "SELECT * FROM " . $this->table . " WHERE (creator = ? OR editor = ?)";
+            $facility_names = $this->normalizeFacilityNames($facility_name);
+            $query = "SELECT * FROM " . $this->table . " WHERE (creator = ? OR editor = ?";
             $params = [$user_id, $user_id];
             
-            if (!empty($facility_name)) {
-                $query .= " OR name = ?";
-                $params[] = $facility_name;
+            if (!empty($facility_names)) {
+                $query .= " OR name IN (" . implode(',', array_fill(0, count($facility_names), '?')) . ")";
+                $params = array_merge($params, $facility_names);
             }
             
-            $query .= " AND is_active = 1 ORDER BY name ASC";
+            $query .= ") AND is_active = 1 ORDER BY name ASC";
             
             $stmt = $this->db->prepare($query);
             $stmt->execute($params);
@@ -167,15 +178,16 @@ class FacilityManager {
      */
     public function getFacilitiesForUser($user_id, $facility_name = null) {
         try {
-            $query = "SELECT * FROM " . $this->table . " WHERE creator = ? OR editor = ?";
+            $facility_names = $this->normalizeFacilityNames($facility_name);
+            $query = "SELECT * FROM " . $this->table . " WHERE (creator = ? OR editor = ?";
             $params = [$user_id, $user_id];
             
-            if (!empty($facility_name)) {
-                $query .= " OR name = ?";
-                $params[] = $facility_name;
+            if (!empty($facility_names)) {
+                $query .= " OR name IN (" . implode(',', array_fill(0, count($facility_names), '?')) . ")";
+                $params = array_merge($params, $facility_names);
             }
             
-            $query .= " ORDER BY name ASC";
+            $query .= ") ORDER BY name ASC";
             $stmt = $this->db->prepare($query);
             $stmt->execute($params);
             return $stmt->fetchAll();
@@ -261,8 +273,8 @@ class FacilityManager {
                 return true;
             }
             
-            // Facility name matches user's facility_name
-            if (!empty($facility_name) && $facility['name'] === $facility_name) {
+            // Facility name matches one of the user's assigned facilities
+            if (in_array($facility['name'], $this->normalizeFacilityNames($facility_name), true)) {
                 return true;
             }
             
@@ -295,8 +307,8 @@ class FacilityManager {
                 $relationships[] = 'edited';
             }
             
-            // Check if facility matches user's facility_name
-            if (!empty($facility_name) && $facility['name'] === $facility_name) {
+            // Check if facility matches one of the user's assigned facilities
+            if (in_array($facility['name'], $this->normalizeFacilityNames($facility_name), true)) {
                 $relationships[] = 'holder';
             }
             

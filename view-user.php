@@ -19,14 +19,14 @@ try {
     $database = new Database();
     $db = $database->connect();
     $auth = new Auth($db);
-    $user = $auth->getUserById($id);
+    $view_user = $auth->getUserById($id);
     $is_online = $auth->isUserOnline($id);
 } catch (Exception $e) {
-    $user = null;
+    $view_user = null;
     $is_online = false;
 }
 
-if (!$user) {
+if (!$view_user) {
     header("Location: users.php");
     exit;
 }
@@ -71,22 +71,22 @@ $success_message = isset($_GET['success']) ? 'User updated successfully.' : '';
             <div style="background:#e8f5e9;color:#2e7d32;padding:12px 16px;border-radius:4px;margin-bottom:20px;"><?php echo htmlspecialchars($success_message); ?></div>
         <?php endif; ?>
         <div class="card">
-            <h1><?php echo htmlspecialchars($user['full_name']); ?></h1>
+            <h1><?php echo htmlspecialchars($view_user['full_name']); ?></h1>
             <div class="detail-row">
                 <span class="detail-label">Username</span>
-                <span class="detail-value"><?php echo htmlspecialchars($user['username']); ?></span>
+                <span class="detail-value"><?php echo htmlspecialchars($view_user['username']); ?></span>
             </div>
             <div class="detail-row">
                 <span class="detail-label">Email</span>
-                <span class="detail-value"><?php echo htmlspecialchars($user['email']); ?></span>
+                <span class="detail-value"><?php echo htmlspecialchars($view_user['email']); ?></span>
             </div>
             <div class="detail-row">
                 <span class="detail-label">Role</span>
-                <span class="detail-value"><span class="badge badge-<?php echo $user['role']; ?>"><?php echo ucfirst($user['role']); ?></span></span>
+                <span class="detail-value"><span class="badge badge-<?php echo $view_user['role']; ?>"><?php echo ucfirst($view_user['role']); ?></span></span>
             </div>
             <div class="detail-row">
-                <span class="detail-label">Facility</span>
-                <span class="detail-value"><?php echo htmlspecialchars($user['facility_name'] ?? '-'); ?></span>
+                <span class="detail-label">Facilities</span>
+                <span class="detail-value"><?php echo htmlspecialchars($auth->formatUserFacilities($id, $view_user['facility_name'] ?? null)); ?></span>
             </div>
             <div class="detail-row">
                 <span class="detail-label">Status</span>
@@ -94,7 +94,7 @@ $success_message = isset($_GET['success']) ? 'User updated successfully.' : '';
             </div>
             <div class="detail-row">
                 <span class="detail-label">Created</span>
-                <span class="detail-value"><?php echo date('M j, Y', strtotime($user['created_at'] ?? 'now')); ?></span>
+                <span class="detail-value"><?php echo date('M j, Y', strtotime($view_user['created_at'] ?? 'now')); ?></span>
             </div>
             <div class="btn-group">
                 <a href="edit-user.php?id=<?php echo $id; ?>" class="btn btn-primary">Edit User</a>

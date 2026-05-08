@@ -54,7 +54,7 @@ $user = $_SESSION;
             </div>
             <div class="info-group">
                 <div class="info-label">Facility</div>
-                <div class="info-value"><?php echo htmlspecialchars($user['facility_name'] ?? 'N/A'); ?></div>
+            <div class="info-value"><?php echo htmlspecialchars(!empty($user['facility_names']) ? implode(', ', $user['facility_names']) : ($user['facility_name'] ?? 'N/A')); ?></div>
             </div>
             </div>
         </div>

@@ -27,7 +27,7 @@ try {
     
     // Facility access control: admin can view all; viewer and input users have restricted access
     if (in_array($current_role, ['viewer', 'input'])) {
-        if (!$manager->canUserAccessFacility($id, $user['user_id'], $user['facility_name'] ?? null)) {
+    if (!$manager->canUserAccessFacility($id, $user['user_id'], $user['facility_names'] ?? ($user['facility_name'] ?? null))) {
             header("Location: unauthorized.php");
             exit;
         }

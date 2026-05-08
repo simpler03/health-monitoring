@@ -12,6 +12,8 @@ class Auth {
     public function __construct($db) {
         $this->db = $db;
         $this->initializeSession();
+        $this->initializeUserFacilitiesTable();
+        $this->backfillLegacyUserFacilities();
     }
 
     /**
@@ -25,6 +27,37 @@ class Auth {
             ini_set('session.cookie_httponly', 1);
             ini_set('session.cookie_secure', 0); // Set to 1 in production with HTTPS
             ini_set('session.cookie_samesite', 'Strict');
+        }
+    }
+
+    private function initializeUserFacilitiesTable() {
+        try {
+            $this->db->exec("
+                CREATE TABLE IF NOT EXISTS user_facilities (
+                    user_id INT NOT NULL,
+                    facility_id INT NOT NULL,
+                    assigned_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    PRIMARY KEY (user_id, facility_id),
+                    KEY idx_user_facilities_user (user_id),
+                    KEY idx_user_facilities_facility (facility_id)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci
+            ");
+        } catch (PDOException $e) {
+            error_log("Initialize User Facilities Error: " . $e->getMessage());
+        }
+    }
+
+    private function backfillLegacyUserFacilities() {
+        try {
+            $this->db->exec("
+                INSERT IGNORE INTO user_facilities (user_id, facility_id)
+                SELECT u.id, f.id
+                FROM users u
+                JOIN facilities f ON f.name = u.facility_name
+                WHERE u.facility_name IS NOT NULL AND u.facility_name != ''
+            ");
+        } catch (PDOException $e) {
+            error_log("Backfill User Facilities Error: " . $e->getMessage());
         }
     }
 
@@ -62,7 +95,10 @@ class Auth {
                 $data['facility_name'] ?? null
             ]);
 
-            return ['success' => true, 'message' => 'User registered successfully'];
+            $user_id = (int)$this->db->lastInsertId();
+            $this->syncUserFacilities($user_id, $data['facility_ids'] ?? []);
+
+            return ['success' => true, 'message' => 'User registered successfully', 'user_id' => $user_id];
 
         } catch (PDOException $e) {
             error_log("Registration Error: " . $e->getMessage());
@@ -95,7 +131,12 @@ class Auth {
                 $_SESSION['email'] = $user['email'];
                 $_SESSION['role'] = $user['role'];
                 $_SESSION['full_name'] = $user['full_name'];
-                $_SESSION['facility_name'] = $user['facility_name'];
+                $facility_names = $this->getUserFacilityNames($user['id']);
+                if (empty($facility_names) && !empty($user['facility_name'])) {
+                    $facility_names = [$user['facility_name']];
+                }
+                $_SESSION['facility_names'] = $facility_names;
+                $_SESSION['facility_name'] = $facility_names[0] ?? $user['facility_name'];
                 $_SESSION['login_time'] = time();
 
                 // Store session in database
@@ -203,7 +244,19 @@ class Auth {
             $query = "SELECT id, username, email, full_name, role, facility_name, is_active, created_at FROM " . $this->table . " WHERE id = ?";
             $stmt = $this->db->prepare($query);
             $stmt->execute([$user_id]);
-            return $stmt->fetch();
+            $user = $stmt->fetch();
+            if ($user) {
+                $user['facility_ids'] = $this->getUserFacilityIds($user_id);
+                $user['facility_names'] = $this->getUserFacilityNames($user_id);
+                if (!empty($user['facility_name'])) {
+                    $legacy_ids = $this->getFacilityIdsByNames([$user['facility_name']]);
+                    $user['facility_ids'] = array_values(array_unique(array_merge($user['facility_ids'], $legacy_ids)));
+                    if (empty($user['facility_names']) || !empty($legacy_ids)) {
+                        $user['facility_names'] = array_values(array_unique(array_merge($user['facility_names'], [$user['facility_name']])));
+                    }
+                }
+            }
+            return $user;
         } catch (PDOException $e) {
             error_log("Get User Error: " . $e->getMessage());
             return null;
@@ -215,11 +268,13 @@ class Auth {
      */
     public function updateUser($user_id, $data) {
         try {
+            $user_id = (int)$user_id;
             if (empty($data['username']) || empty($data['email']) || empty($data['full_name'])) {
                 return ['success' => false, 'message' => 'Username, email, and full name are required'];
             }
-            if ($this->userExistsExcluding($data['username'], $data['email'], $user_id)) {
-                return ['success' => false, 'message' => 'Username or email already in use'];
+            $conflict = $this->findUserConflict($data['username'], $data['email'], $user_id);
+            if ($conflict) {
+                return ['success' => false, 'message' => ucfirst($conflict) . ' already in use'];
             }
             $params = [$data['username'], $data['email'], $data['full_name'], $data['role'] ?? 'viewer', $data['facility_name'] ?? null, $data['is_active'] ?? 1];
             $query = "UPDATE " . $this->table . " SET username=?, email=?, full_name=?, role=?, facility_name=?, is_active=?";
@@ -231,6 +286,7 @@ class Auth {
             $params[] = $user_id;
             $stmt = $this->db->prepare($query);
             $stmt->execute($params);
+            $this->syncUserFacilities($user_id, $data['facility_ids'] ?? []);
             return ['success' => true, 'message' => 'User updated'];
         } catch (PDOException $e) {
             error_log("Update User Error: " . $e->getMessage());
@@ -238,17 +294,134 @@ class Auth {
         }
     }
 
+    public function syncUserFacilities($user_id, $facility_ids) {
+        try {
+            $facility_ids = array_values(array_unique(array_filter(array_map('intval', (array)$facility_ids))));
+            if (!empty($facility_ids)) {
+                $valid_stmt = $this->db->prepare("SELECT id FROM facilities WHERE id IN (" . implode(',', array_fill(0, count($facility_ids), '?')) . ")");
+                $valid_stmt->execute($facility_ids);
+                $valid_ids = array_map('intval', $valid_stmt->fetchAll(PDO::FETCH_COLUMN));
+                $facility_ids = array_values(array_filter($facility_ids, fn($id) => in_array($id, $valid_ids, true)));
+            }
+
+            $this->db->beginTransaction();
+
+            $delete = $this->db->prepare("DELETE FROM user_facilities WHERE user_id = ?");
+            $delete->execute([$user_id]);
+
+            if (!empty($facility_ids)) {
+                $insert = $this->db->prepare("INSERT INTO user_facilities (user_id, facility_id) VALUES (?, ?)");
+                foreach ($facility_ids as $facility_id) {
+                    $insert->execute([$user_id, $facility_id]);
+                }
+            }
+
+            $primary_name = null;
+            if (!empty($facility_ids)) {
+                $name_stmt = $this->db->prepare("SELECT name FROM facilities WHERE id = ? LIMIT 1");
+                $name_stmt->execute([$facility_ids[0]]);
+                $primary_name = $name_stmt->fetchColumn() ?: null;
+            }
+
+            $legacy = $this->db->prepare("UPDATE " . $this->table . " SET facility_name = ? WHERE id = ?");
+            $legacy->execute([$primary_name, $user_id]);
+
+            $this->db->commit();
+            return true;
+        } catch (PDOException $e) {
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+            error_log("Sync User Facilities Error: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    public function getUserFacilityIds($user_id) {
+        try {
+            $query = "SELECT facility_id FROM user_facilities WHERE user_id = ? ORDER BY assigned_at ASC, facility_id ASC";
+            $stmt = $this->db->prepare($query);
+            $stmt->execute([$user_id]);
+            return array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN));
+        } catch (PDOException $e) {
+            error_log("Get User Facility IDs Error: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    public function getUserFacilityNames($user_id) {
+        try {
+            $query = "SELECT f.name
+                      FROM user_facilities uf
+                      JOIN facilities f ON uf.facility_id = f.id
+                      WHERE uf.user_id = ?
+                      ORDER BY f.name ASC";
+            $stmt = $this->db->prepare($query);
+            $stmt->execute([$user_id]);
+            return $stmt->fetchAll(PDO::FETCH_COLUMN);
+        } catch (PDOException $e) {
+            error_log("Get User Facility Names Error: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    private function getFacilityIdsByNames($facility_names) {
+        try {
+            $facility_names = array_values(array_filter((array)$facility_names));
+            if (empty($facility_names)) {
+                return [];
+            }
+            $query = "SELECT id FROM facilities WHERE name IN (" . implode(',', array_fill(0, count($facility_names), '?')) . ")";
+            $stmt = $this->db->prepare($query);
+            $stmt->execute($facility_names);
+            return array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN));
+        } catch (PDOException $e) {
+            error_log("Get Facility IDs By Names Error: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    public function formatUserFacilities($user_id, $fallback = null) {
+        $facility_names = $this->getUserFacilityNames($user_id);
+        if (empty($facility_names) && !empty($fallback)) {
+            $facility_names = [$fallback];
+        }
+        return !empty($facility_names) ? implode(', ', $facility_names) : '-';
+    }
+
     /**
      * Check if user exists excluding a user ID
      */
     private function userExistsExcluding($username, $email, $exclude_id) {
+        return (bool)$this->findUserConflict($username, $email, $exclude_id);
+    }
+
+    private function findUserConflict($username, $email, $exclude_id) {
         try {
-            $query = "SELECT id FROM " . $this->table . " WHERE (username = ? OR email = ?) AND id != ?";
+            $exclude_id = (int)$exclude_id;
+
+            $query = "SELECT id FROM " . $this->table . " WHERE username = ?";
             $stmt = $this->db->prepare($query);
-            $stmt->execute([$username, $email, $exclude_id]);
-            return $stmt->rowCount() > 0;
+            $stmt->execute([$username]);
+            foreach ($stmt->fetchAll(PDO::FETCH_COLUMN) as $existing_id) {
+                if ((int)$existing_id !== $exclude_id) {
+                    return 'username';
+                }
+            }
+
+            $query = "SELECT id FROM " . $this->table . " WHERE email = ?";
+            $stmt = $this->db->prepare($query);
+            $stmt->execute([$email]);
+            foreach ($stmt->fetchAll(PDO::FETCH_COLUMN) as $existing_id) {
+                if ((int)$existing_id !== $exclude_id) {
+                    return 'email';
+                }
+            }
+
+            return null;
         } catch (PDOException $e) {
-            return false;
+            error_log("User Conflict Check Error: " . $e->getMessage());
+            return null;
         }
     }
 

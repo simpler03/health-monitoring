@@ -30,7 +30,7 @@ $navItems = [
     <div class="user-info">
         <p><strong><?php echo htmlspecialchars($user['full_name'] ?? 'Guest'); ?></strong></p>
         <p><?php echo ucfirst(htmlspecialchars($current_role)); ?></p>
-        <p style="font-size: 12px; color: rgba(255,255,255,0.7);"><?php echo htmlspecialchars($user['facility_name'] ?? 'N/A'); ?></p>
+                <p style="font-size: 12px; color: rgba(255,255,255,0.7);"><?php echo htmlspecialchars(!empty($user['facility_names']) ? implode(', ', $user['facility_names']) : ($user['facility_name'] ?? 'N/A')); ?></p>
         <form action="logout.php" method="POST" style="margin-top: 10px;">
             <button type="submit" class="logout-btn" onclick="return confirm('Are you sure you want to logout?')">Logout</button>
         </form>

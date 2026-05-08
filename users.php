@@ -84,7 +84,7 @@ $success_message = isset($_GET['success']) ? 'User created successfully.' : '';
                             <td><?php echo htmlspecialchars($u['username']); ?></td>
                             <td><?php echo htmlspecialchars($u['email']); ?></td>
                             <td><span class="badge badge-<?php echo $u['role']; ?>"><?php echo ucfirst($u['role']); ?></span></td>
-                            <td><?php echo htmlspecialchars($u['facility_name'] ?? '-'); ?></td>
+                            <td><?php echo htmlspecialchars($auth ? $auth->formatUserFacilities($u['id'], $u['facility_name'] ?? null) : ($u['facility_name'] ?? '-')); ?></td>
                             <td><?php $is_online = $auth ? $auth->isUserOnline($u['id']) : false; ?><span class="status-<?php echo $is_online ? 'online' : 'offline'; ?>"><?php echo $is_online ? 'Online' : 'Offline'; ?></span></td>
                             <td>
                                 <a href="view-user.php?id=<?php echo (int)$u['id']; ?>" style="color:#667eea;text-decoration:none;margin-right:8px;">View</a>

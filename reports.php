@@ -30,7 +30,7 @@ try {
         $facilities = $facility_manager->getAllFacilitiesForAdmin();
     } else {
         // For input and viewer, show facilities they created, edited, or are assigned to
-        $facilities = $facility_manager->getFacilitiesForUser($user['user_id'], $user['facility_name'] ?? null);
+        $facilities = $facility_manager->getFacilitiesForUser($user['user_id'], $user['facility_names'] ?? ($user['facility_name'] ?? null));
     }
     
     // Get evaluations based on user access
@@ -38,7 +38,7 @@ try {
         $evaluations = $evaluation_manager->getEvaluations([]);
     } else {
         // For input and viewer, show evaluations for accessible facilities
-        $evaluations = $evaluation_manager->getEvaluationsForUser($user['user_id'], $user['facility_name'] ?? null);
+        $evaluations = $evaluation_manager->getEvaluationsForUser($user['user_id'], $user['facility_names'] ?? ($user['facility_name'] ?? null));
     }
     
     // Calculate summary statistics

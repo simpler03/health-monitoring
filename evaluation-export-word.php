@@ -34,7 +34,7 @@ try {
     $current_role = $user['role'] ?? 'viewer';
     
     if (in_array($current_role, ['viewer', 'input'])) {
-        if (!$facility_manager->canUserAccessFacility($evaluation['facility_id'], $user['user_id'], $user['facility_name'] ?? null)) {
+    if (!$facility_manager->canUserAccessFacility($evaluation['facility_id'], $user['user_id'], $user['facility_names'] ?? ($user['facility_name'] ?? null))) {
             header("Location: unauthorized.php");
             exit;
         }

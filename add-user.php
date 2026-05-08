@@ -32,13 +32,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $auth = new Auth($db);
         }
         
+        $selected_facility_ids = array_values(array_unique(array_filter(array_map('intval', $_POST['facility_ids'] ?? []))));
+        $primary_facility_name = null;
+        if (!empty($selected_facility_ids)) {
+            foreach ($facilities as $facility) {
+                if ((int)$facility['id'] === $selected_facility_ids[0]) {
+                    $primary_facility_name = $facility['name'];
+                    break;
+                }
+            }
+        }
+
         $data = [
             'username' => trim($_POST['username'] ?? ''),
             'email' => trim($_POST['email'] ?? ''),
             'password' => $_POST['password'] ?? '',
             'full_name' => trim($_POST['full_name'] ?? ''),
             'role' => $_POST['role'] ?? 'viewer',
-            'facility_name' => trim($_POST['facility_name'] ?? '') ?: null
+            'facility_name' => $primary_facility_name,
+            'facility_ids' => $selected_facility_ids
         ];
         
         if (strlen($data['password']) < 6) {
@@ -49,8 +61,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             if ($result['success']) {
                 // Log the creation
-                $new_user_id = $db->lastInsertId();
-                $new_value = "username: {$data['username']}\nemail: {$data['email']}\nfull_name: {$data['full_name']}\nrole: {$data['role']}\nfacility_name: " . ($data['facility_name'] ?? 'null');
+                $new_user_id = $result['user_id'] ?? $db->lastInsertId();
+                $facility_names = array_values(array_map(fn($facility) => $facility['name'], array_filter($facilities, fn($facility) => in_array((int)$facility['id'], $selected_facility_ids, true))));
+                $new_value = "username: {$data['username']}\nemail: {$data['email']}\nfull_name: {$data['full_name']}\nrole: {$data['role']}\nfacilities: " . (!empty($facility_names) ? implode(', ', $facility_names) : 'none');
                 $auth->logAuditTrail($_SESSION['user_id'], 'CREATE_USER', 'USER', $new_user_id, null, $new_value);
                 
                 header("Location: users.php?success=1");
@@ -83,6 +96,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .form-group input, .form-group select { width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; }
         .form-group input:focus, .form-group select:focus { outline: none; border-color: #667eea; box-shadow: 0 0 0 2px rgba(102,126,234,0.2); }
         .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .form-help { font-size: 12px; color: #999; margin-top: 4px; }
+        .facility-checkbox-list { width: 100%; max-height: 160px; overflow-y: auto; border: 1px solid #ddd; border-radius: 4px; padding: 10px 12px; background: white; }
+        .facility-checkbox { display: flex !important; align-items: flex-start; gap: 8px; padding: 6px 0; margin: 0; font-weight: 400 !important; line-height: 1.35; cursor: pointer; }
+        .facility-checkbox input { width: auto; margin: 2px 0 0 0; flex: 0 0 auto; }
+        .facility-checkbox span { flex: 1; }
         .btn { padding: 10px 24px; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: 600; }
         .btn-primary { background: linear-gradient(135deg, #667eea, #764ba2); color: white; }
         .btn-secondary { background: #e0e0e0; color: #333; text-decoration: none; display: inline-block; }
@@ -133,13 +151,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </select>
                     </div>
                     <div class="form-group">
-                        <label for="facility_name">Facility</label>
-                        <select id="facility_name" name="facility_name">
-                            <option value="">— Select Facility —</option>
+                        <label>Facilities</label>
+                        <div class="facility-checkbox-list">
+                            <?php $selected_ids = array_map('intval', $_POST['facility_ids'] ?? []); ?>
                             <?php foreach ($facilities as $f): ?>
-                                <option value="<?php echo htmlspecialchars($f['name']); ?>" <?php echo ($_POST['facility_name'] ?? '') === $f['name'] ? 'selected' : ''; ?>><?php echo htmlspecialchars($f['name']); ?></option>
+                                <label class="facility-checkbox">
+                                    <input type="checkbox" name="facility_ids[]" value="<?php echo (int)$f['id']; ?>" <?php echo in_array((int)$f['id'], $selected_ids, true) ? 'checked' : ''; ?>>
+                                    <span><?php echo htmlspecialchars($f['name']); ?></span>
+                                </label>
                             <?php endforeach; ?>
-                        </select>
+                        </div>
+                        <div class="form-help">Check every facility this user can access.</div>
                     </div>
                 </div>
                 <div class="btn-group">

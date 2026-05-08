@@ -68,7 +68,7 @@ try {
     // Admins have full control and bypass this check
     if ($user_role !== 'admin' && $user_role === 'input') {
         $user_id = $_SESSION['user_id'] ?? null;
-        $user_facility = $_SESSION['facility_name'] ?? null;
+        $user_facility = $_SESSION['facility_names'] ?? ($_SESSION['facility_name'] ?? null);
         if (!$facility_manager->canUserAccessFacility($evaluation['facility_id'], $user_id, $user_facility)) {
             http_response_code(403);
             echo json_encode(['success' => false, 'message' => 'Access denied: evaluation is not in an accessible facility']);

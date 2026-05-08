@@ -32,7 +32,7 @@ try {
         $evaluations = $manager->getEvaluations([]);
     } else {
         // For input and viewer, show evaluations for facilities they created, edited, or are assigned to
-        $evaluations = $manager->getEvaluationsForUser($user['user_id'], $user['facility_name'] ?? null);
+        $evaluations = $manager->getEvaluationsForUser($user['user_id'], $user['facility_names'] ?? ($user['facility_name'] ?? null));
     }
 
 } catch (Exception $e) {

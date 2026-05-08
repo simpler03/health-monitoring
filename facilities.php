@@ -24,7 +24,7 @@ try {
         $facilities = $facility_manager->getAllFacilitiesForAdmin();
     } else {
         // For input and viewer, show facilities they created or edited, or match their facility_name
-        $facilities = $facility_manager->getFacilitiesForUser($user['user_id'], $user['facility_name'] ?? null);
+        $facilities = $facility_manager->getFacilitiesForUser($user['user_id'], $user['facility_names'] ?? ($user['facility_name'] ?? null));
     }
 } catch (Exception $e) {
     $facilities = [];
@@ -86,7 +86,7 @@ $success_message = isset($_GET['success']) ? 'Facility created successfully.' : 
                         <?php 
                             $relationships = [];
                             if (!in_array($current_role, ['admin'])) {
-                                $relationships = $facility_manager->getUserFacilityRelationships($facility['id'], $user['user_id'], $user['facility_name'] ?? null);
+                                $relationships = $facility_manager->getUserFacilityRelationships($facility['id'], $user['user_id'], $user['facility_names'] ?? ($user['facility_name'] ?? null));
                             }
                         ?>
                         <tr>

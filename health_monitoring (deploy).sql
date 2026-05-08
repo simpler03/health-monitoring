@@ -1169,6 +1169,16 @@ CREATE TABLE `users` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
+-- Table structure for table `user_facilities`
+--
+
+CREATE TABLE `user_facilities` (
+  `user_id` int(11) NOT NULL,
+  `facility_id` int(11) NOT NULL,
+  `assigned_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
 -- Dumping data for table `users`
 --
 
@@ -1178,6 +1188,16 @@ INSERT INTO `users` (`id`, `username`, `email`, `password_hash`, `full_name`, `r
 (3, 'viewer', 'viewer@health-monitoring.local', '$2y$10$zDAE/JGqesFHgtweUdinFOS3sqVY.iAne3lHTYqx5g9wqe7r2uIQm', 'Anna Garcia', 'viewer', 'Ormoc City Health Center', NULL, 1, '2026-02-18 02:22:15', '2026-02-18 02:22:15'),
 (12, 'adminalas', 'aaaa@gmail.com', '$2y$10$9psgQibHWw4wiyhx18Wn/e1.sV1L1jhTNwGEK1ABtOJHEIsBaj4vm', 'QMERJEMS INPUT SAMPLE', 'input', 'QMER Training Center', NULL, 1, '2026-05-08 02:29:26', '2026-05-08 02:29:26'),
 (13, 'salamidaqmer', 'admina@gmail.com', '$2y$10$oI7pHm720NzR/kCnax.Lke5.DEdKqPv.beHJaGA8/cYpumpD5A2w6', 'QMERJEMS VIEWER SAMPLE', 'viewer', 'QMER Training Center', NULL, 1, '2026-05-08 02:39:02', '2026-05-08 02:39:02');
+
+--
+-- Dumping data for table `user_facilities`
+--
+
+INSERT INTO `user_facilities` (`user_id`, `facility_id`)
+SELECT u.id, f.id
+FROM `users` u
+JOIN `facilities` f ON f.name = u.facility_name
+WHERE u.facility_name IS NOT NULL AND u.facility_name != '';
 
 --
 -- Indexes for dumped tables
@@ -1270,6 +1290,15 @@ ALTER TABLE `users`
   ADD KEY `idx_email` (`email`),
   ADD KEY `idx_role` (`role`),
   ADD KEY `idx_facility` (`facility_name`);
+
+--
+-- Indexes for table `user_facilities`
+--
+
+ALTER TABLE `user_facilities`
+  ADD PRIMARY KEY (`user_id`,`facility_id`),
+  ADD KEY `idx_user_facilities_user` (`user_id`),
+  ADD KEY `idx_user_facilities_facility` (`facility_id`);
 
 --
 -- AUTO_INCREMENT for dumped tables

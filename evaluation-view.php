@@ -50,7 +50,7 @@ try {
     // Facility access control: check if user has access to this evaluation's facility
     // Admin can access all, input/viewer can only access facilities they created, edited, or are assigned to
     if ($current_role !== 'admin' && in_array($current_role, ['viewer', 'input'])) {
-        if (!$facility_manager->canUserAccessFacility($evaluation['facility_id'], $user['user_id'], $user['facility_name'] ?? null)) {
+        if (!$facility_manager->canUserAccessFacility($evaluation['facility_id'], $user['user_id'], $user['facility_names'] ?? ($user['facility_name'] ?? null))) {
             header("Location: unauthorized.php");
             exit;
         }
@@ -63,7 +63,8 @@ try {
     }
 
     // Check if user is facility owner, editor, or holder
-    $is_facility_owner = ($facility && ($facility['creator'] == $user['user_id'] || $facility['editor'] == $user['user_id'] || $facility['name'] === $user['facility_name']));
+    $assigned_facilities = $user['facility_names'] ?? (!empty($user['facility_name']) ? [$user['facility_name']] : []);
+    $is_facility_owner = ($facility && ($facility['creator'] == $user['user_id'] || $facility['editor'] == $user['user_id'] || in_array($facility['name'], $assigned_facilities, true)));
 
     // View-only by default; editing only when:
     // 1. User is not a viewer, AND
@@ -2540,22 +2541,34 @@ $printAll = isset($_GET['print_all']) && $_GET['print_all'] === '1';
                         approved: approved_status
                     })
                 });
-                const result = await res.json();
+
+                const responseText = await res.text();
+                let result;
+                try {
+                    result = responseText ? JSON.parse(responseText) : {};
+                } catch (parseError) {
+                    throw new Error(responseText || 'Invalid server response');
+                }
+
+                if (!res.ok) {
+                    throw new Error(result.message || 'Failed to submit approval');
+                }
+
                 if (result.success) {
                     const statusText = approved_status === 1 ? 'approved' : 'rejected';
                     showToast(`Evaluation ${statusText} successfully.`, 'success');
                     closeApprovalModal();
-                    // Optionally hide the button after approval
                     const btn = document.getElementById('approve-btn');
                     if (btn) {
                         btn.disabled = true;
                         btn.textContent = approved_status === 1 ? '✓ Approved' : '✗ Rejected';
                     }
+                    setTimeout(() => window.location.reload(), 700);
                 } else {
                     showToast(result.message || 'Failed to submit approval', 'error');
                 }
             } catch (e) {
-                showToast('Error submitting approval: ' + e.message, 'error');
+                showToast(e.message || 'Error submitting approval', 'error');
             }
         }
 
