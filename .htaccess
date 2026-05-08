@@ -1,0 +1,79 @@
+# Health Performance Monitoring System - Public Directory Configuration
+
+# Enable mod_rewrite
+RewriteEngine On
+RewriteBase /health-monitoring-deploy/
+
+# Prevent access to hidden files
+RewriteRule "^\." - [F]
+
+# Redirect all requests to index.php if file doesn't exist
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ index.php?url=$1 [QSA,L]
+
+# Security Headers
+<IfModule mod_headers.c>
+    # Prevent clickjacking
+    Header always append X-Frame-Options "SAMEORIGIN"
+    
+    # Prevent MIME type sniffing
+    Header set X-Content-Type-Options "nosniff"
+    
+    # Enable XSS protection in older browsers
+    Header set X-XSS-Protection "1; mode=block"
+    
+    # Prevent access from different domains
+    Header set X-Permitted-Cross-Domain-Policies "none"
+</IfModule>
+
+# Compression
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html
+    AddOutputFilterByType DEFLATE text/plain
+    AddOutputFilterByType DEFLATE text/css
+    AddOutputFilterByType DEFLATE text/javascript
+    AddOutputFilterByType DEFLATE application/javascript
+</IfModule>
+
+# Caching (1 week for static assets)
+<IfModule mod_expires.c>
+    ExpiresActive On
+    
+    ExpiresByType text/css A604800
+    ExpiresByType text/javascript A604800
+    ExpiresByType application/javascript A604800
+    ExpiresByType image/gif A604800
+    ExpiresByType image/jpeg A604800
+    ExpiresByType image/png A604800
+    
+    # Dynamic content expires immediately
+    ExpiresByType text/html A0
+    ExpiresByType application/json A0
+</IfModule>
+
+# PHP Configuration
+<IfModule mod_php.c>
+    php_value upload_max_filesize 10M
+    php_value post_max_size 10M
+    php_value max_execution_time 30
+    php_value memory_limit 128M
+    
+    # Security
+    php_value display_errors Off
+    php_value log_errors On
+    php_flag session.httponly on
+    php_flag session.use_only_cookies on
+</IfModule>
+
+# Disable directory listing
+Options -Indexes
+
+# File access restrictions
+<FilesMatch "\.php$">
+    Require all granted
+</FilesMatch>
+
+<FilesMatch "\.(htaccess|htpasswd)$">
+    Require all denied
+</FilesMatch>

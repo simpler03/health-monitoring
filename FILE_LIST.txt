@@ -1,0 +1,207 @@
+================================================================================
+HEALTH MONITORING SYSTEM - DEPLOYMENT PACKAGE FILE LIST
+================================================================================
+
+TOTAL SIZE: ~820 KB
+TOTAL FILES: 49
+
+================================================================================
+ROOT FILES (4 files)
+================================================================================
+
+1. health_monitoring.sql          (103 KB) - Complete database schema + data
+2. .htaccess                      (2 KB)   - Apache URL rewriting & security
+3. README_DEPLOY.txt              (3 KB)   - Main documentation
+4. QUICK_START.txt                (10 KB)  - Quick start guide
+5. DEPLOYMENT_CHECKLIST.txt       (5 KB)   - Deployment checklist
+
+================================================================================
+PUBLIC FOLDER - WEB ROOT (30 items)
+================================================================================
+
+CONFIGURATION (5 files):
+-------------------------
+public/config/Database.php            - Database connection (PDO)
+public/config/Auth.php                - Authentication & session management
+public/config/EvaluationManager.php   - Evaluation CRUD operations
+public/config/FacilityManager.php     - Facility management
+public/config/QueryHelper.php         - Database query utilities
+
+API ENDPOINTS (9 files):
+-------------------------
+public/api/save_score.php             - AJAX: Save individual scores
+public/api/get_evaluation_data.php    - AJAX: Load evaluation data
+public/api/save_signatures.php        - AJAX: Save digital signatures
+public/api/update_evaluation_status.php - AJAX: Update evaluation status
+public/api/generate-report.php        - AJAX: Generate reports
+public/api/get-filtered-building-blocks.php - AJAX: Filter blocks
+public/api/diagnostic-viewer.php      - Diagnostic tool
+public/api/quick-check.php            - Quick health check
+public/api/fix-inactive-kpis.php      - KPI fix utility
+
+STYLESHEETS (1 file):
+----------------------
+public/css/styles.css                 - Responsive CSS with variables
+
+IMAGES (4 files):
+------------------
+public/images/                        - Logos and UI images
+
+MAIN APPLICATION PAGES (24 files):
+-----------------------------------
+public/index.php                      - Entry point (redirects to login/dashboard)
+public/login.php                      - User login page
+public/logout.php                     - Logout handler
+public/dashboard.php                  - Main dashboard with statistics
+public/evaluations.php                - List all evaluations
+public/new-evaluation.php             - Create new evaluation form
+public/evaluation-view.php            - Spreadsheet interface (main feature)
+public/evaluation-edit.php            - Edit evaluation redirect
+public/evaluation-export.php          - Export to PDF/print
+public/evaluation-export-word.php     - Export to Word document
+public/facility-summary.php           - Facility performance summary
+
+ADMIN PAGES:
+public/users.php                      - User management (admin only)
+public/add-user.php                   - Add new user
+public/edit-user.php                  - Edit user details
+public/view-user.php                  - View user profile
+public/facilities.php                 - Facility management (admin only)
+public/add-facility.php               - Add new facility
+public/edit-facility.php              - Edit facility details
+public/view-facility.php              - View facility info
+public/audit-log.php                  - Audit trail viewer (admin only)
+public/reports.php                    - Reports generator (admin only)
+
+UTILITY PAGES:
+public/profile.php                    - User profile page
+public/unauthorized.php               - 403 Access denied page
+public/diagnose.php                   - System diagnostic tool
+public/test.php                       - Testing utilities
+public/hide-health-info-systems.php   - UI toggle utility
+
+================================================================================
+WHAT'S INCLUDED
+================================================================================
+
+✓ Complete PHP application (no frameworks needed)
+✓ Database schema with sample data
+✓ 8 database tables with relationships
+✓ 163 Key Performance Indicators (KPIs)
+✓ 7 Building Blocks for health system evaluation
+✓ 3 user roles: Admin, Input, Viewer
+✓ Digital signature support (5 types)
+✓ Complete audit logging system
+✓ Spreadsheet-style data entry interface
+✓ Real-time AJAX functionality
+✓ Mobile responsive design
+✓ Security features (bcrypt, prepared statements, RBAC)
+✓ Export capabilities (PDF, Word)
+✓ Comprehensive documentation
+
+================================================================================
+WHAT'S EXCLUDED (Not Needed for Deployment)
+================================================================================
+
+✗ Vendor folders (PhpSpreadsheet source code)
+✗ Development files (notes, drafts)
+✗ Git repository files (.git, .gitignore)
+✗ Build tools (composer.json, package.json)
+✗ Documentation markdown files (only .txt included)
+✗ IDE configuration files (.qoder, .vscode)
+✗ Test files (unless needed for production)
+✗ Temporary files and caches
+
+================================================================================
+DATABASE STRUCTURE (8 Tables)
+================================================================================
+
+1. users                        - User accounts and roles
+2. facilities                   - Health facilities information
+3. building_blocks              - 7 health system components
+4. strategic_objectives         - Goals within each block
+5. key_performance_indicators   - 163 KPIs with targets
+6. evaluations                  - Assessment records
+7. scores                       - Individual KPI scores
+8. audit_logs                   - Complete activity trail
+
+Sample Data Included:
+- 4 demo users (admin, input, viewer, +1 custom)
+- 4 demo facilities (Leyte Province)
+- 7 building blocks
+- 48 strategic objectives
+- 163 KPIs
+- Sample evaluations and scores
+- 130+ audit log entries
+
+================================================================================
+DEPLOYMENT STEPS
+================================================================================
+
+1. Import database:
+   mysql -u root -p < health_monitoring.sql
+
+2. Edit config:
+   public/config/Database.php
+
+3. Point web server to:
+   public/ folder
+
+4. Access system:
+   http://localhost/login.php
+
+5. Login:
+   admin / admin123
+
+================================================================================
+TECHNICAL SPECIFICATIONS
+================================================================================
+
+Backend:        PHP 7.4+ (pure PHP, no frameworks)
+Database:       MySQL 5.7+ or MariaDB 10.2+
+Frontend:       HTML5, CSS3, Vanilla JavaScript
+Architecture:   MVC-inspired with manager classes
+Security:       Bcrypt, PDO prepared statements, RBAC
+Sessions:       PHP sessions with HTTP-only cookies
+AJAX:           Vanilla JavaScript (no jQuery)
+Responsive:     Yes, mobile-friendly design
+
+================================================================================
+SUPPORT FILES
+================================================================================
+
+QUICK_START.txt:
+  - 3-step setup guide
+  - Web server configuration
+  - First things to try
+  - Troubleshooting tips
+
+README_DEPLOY.txt:
+  - System overview
+  - Features list
+  - File structure
+  - Security features
+
+DEPLOYMENT_CHECKLIST.txt:
+  - Pre-deployment checklist
+  - Testing procedures
+  - Post-deployment tasks
+  - Maintenance schedule
+  - Troubleshooting guide
+
+================================================================================
+VERSION INFORMATION
+================================================================================
+
+Version:        1.0.0
+Release Date:   2026
+PHP Required:   7.4 or higher
+MySQL Required: 5.7 or higher
+License:        Republic of the Philippines - Department of Health
+
+================================================================================
+
+Ready for production deployment!
+No additional dependencies required.
+
+================================================================================

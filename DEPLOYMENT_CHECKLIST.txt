@@ -1,0 +1,198 @@
+# Health Monitoring System - Deployment Checklist
+
+## Pre-Deployment
+
+### Server Requirements
+- [ ] PHP 7.4+ installed
+- [ ] MySQL 5.7+ or MariaDB 10.2+ installed
+- [ ] Apache or Nginx web server configured
+- [ ] PDO MySQL extension enabled in PHP
+- [ ] At least 20MB free disk space
+
+### Database Setup
+- [ ] Create database: `health_monitoring`
+- [ ] Import SQL file: `health_monitoring.sql`
+  ```bash
+  mysql -u root -p health_monitoring < health_monitoring.sql
+  ```
+- [ ] Verify tables created (should be 8 tables)
+- [ ] Verify sample data loaded
+
+### Configuration
+- [ ] Edit `public/config/Database.php`
+  - Set `$host` (usually 'localhost')
+  - Set `$db_name` (usually 'health_monitoring')
+  - Set `$username` (usually 'root')
+  - Set `$password` (your MySQL password)
+
+### Web Server Configuration
+
+#### Apache
+- [ ] Document Root points to `public/` folder
+- [ ] `.htaccess` file is present and readable
+- [ ] mod_rewrite is enabled
+- [ ] AllowOverride All is set in Apache config
+
+#### Nginx
+- [ ] Add location block:
+  ```nginx
+  location / {
+      try_files $uri $uri/ /index.php?$query_string;
+  }
+  ```
+- [ ] Document Root points to `public/` folder
+
+### File Permissions
+- [ ] Set permissions on Linux/Mac:
+  ```bash
+  chmod 755 public/
+  chmod 755 public/api/
+  chmod 755 public/config/
+  ```
+- [ ] Ensure web server can read all files
+- [ ] Ensure web server can write to session directory
+
+### Security (Production)
+- [ ] Enable HTTPS (SSL certificate)
+- [ ] Change default demo passwords
+- [ ] Remove or disable `test.php` and `diagnose.php`
+- [ ] Set `session.cookie_secure = 1` in Auth.php
+- [ ] Configure proper session timeout
+- [ ] Set up regular database backups
+- [ ] Review and restrict file permissions
+
+---
+
+## Testing
+
+### Login Test
+- [ ] Navigate to: `http://your-domain/login.php`
+- [ ] Login as admin: `admin` / `admin123`
+- [ ] Verify dashboard loads correctly
+- [ ] Check user info displays properly
+
+### Feature Tests
+- [ ] Create a new evaluation
+- [ ] Open evaluation and test double-click editing
+- [ ] Verify AJAX score saving works (no page reload)
+- [ ] Test facility management (admin only)
+- [ ] Test user management (admin only)
+- [ ] View audit log (admin only)
+- [ ] Test print/export functionality
+- [ ] Test logout and re-login
+
+### Role Tests
+- [ ] Login as `input` / `input123`
+  - [ ] Can create evaluations
+  - [ ] Cannot access admin features
+- [ ] Login as `viewer` / `viewer123`
+  - [ ] Can view evaluations
+  - [ ] Cannot edit or create
+  - [ ] Cannot access admin features
+
+### Database Tests
+- [ ] Check audit_logs table is recording actions
+- [ ] Verify scores are saving correctly
+- [ ] Test concurrent access (multiple users)
+
+---
+
+## Post-Deployment
+
+### Monitoring
+- [ ] Check PHP error logs regularly
+- [ ] Monitor database performance
+- [ ] Review audit logs for unusual activity
+- [ ] Check disk space usage
+
+### Maintenance
+- [ ] Schedule regular database backups:
+  ```bash
+  mysqldump -u root -p health_monitoring > backup_$(date +%Y%m%d).sql
+  ```
+- [ ] Review and archive old evaluations quarterly
+- [ ] Update KPIs annually
+- [ ] Monitor user activity and access patterns
+
+### Documentation
+- [ ] Document custom configurations
+- [ ] Record any modifications made
+- [ ] Keep backup credentials secure
+- [ ] Document server environment details
+
+---
+
+## Troubleshooting
+
+### Database Connection Error
+- Verify MySQL is running
+- Check credentials in `public/config/Database.php`
+- Test connection: `mysql -u username -p -h localhost health_monitoring`
+- Check PHP error logs
+
+### Login Fails
+- Clear browser cookies/cache
+- Verify users exist: `SELECT * FROM users;`
+- Check if users are active: `is_active = 1`
+- Review PHP error logs
+
+### AJAX Not Working
+- Open browser console (F12) and check for errors
+- Verify `public/api/` files exist and are accessible
+- Check file permissions
+- Verify session is active
+
+### Page Not Found (404)
+- Check web server configuration
+- Verify Document Root points to `public/`
+- Ensure `.htaccess` exists (Apache)
+- Check URL rewrite rules
+
+### Scores Won't Save
+- Check user has proper role (admin or input)
+- Verify evaluation status is 'draft' (not completed)
+- Check browser console for JavaScript errors
+- Review PHP error logs
+- Verify database connection
+
+---
+
+## Quick Reference
+
+### Demo Credentials
+| Role | Username | Password |
+|------|----------|----------|
+| Admin | admin | admin123 |
+| Input | input | input123 |
+| Viewer | viewer | viewer123 |
+
+### Important Files
+- Database config: `public/config/Database.php`
+- Authentication: `public/config/Auth.php`
+- Main dashboard: `public/dashboard.php`
+- Evaluation view: `public/evaluation-view.php`
+- API endpoints: `public/api/`
+
+### Database Tables
+1. `users` - User accounts
+2. `facilities` - Health facilities
+3. `building_blocks` - 7 health system components
+4. `strategic_objectives` - Goals within blocks
+5. `key_performance_indicators` - 163 KPIs
+6. `evaluations` - Assessment records
+7. `scores` - Individual KPI scores
+8. `audit_logs` - Activity trail
+
+---
+
+## Support
+
+For technical issues:
+1. Check PHP error logs
+2. Review database logs
+3. Check browser console for JS errors
+4. Review audit logs in the system
+5. Consult code comments in PHP files
+
+**Version**: 1.0.0
+**Last Updated**: 2026

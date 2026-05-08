@@ -1,0 +1,305 @@
+================================================================================
+HEALTH PERFORMANCE MONITORING SYSTEM - QUICK START GUIDE
+Province-Wide Local Health System Monitoring Tool
+================================================================================
+
+WHAT YOU HAVE:
+--------------
+A complete, production-ready PHP application for health facility performance
+evaluations. No external dependencies - just PHP, MySQL, and HTML/CSS/JS.
+
+SYSTEM REQUIREMENTS:
+-------------------
+✓ PHP 7.4 or higher
+✓ MySQL 5.7 or MariaDB 10.2 or higher
+✓ Apache or Nginx web server
+✓ 20MB disk space
+✓ PDO MySQL extension enabled
+
+================================================================================
+SETUP IN 3 SIMPLE STEPS
+================================================================================
+
+STEP 1: CREATE DATABASE (1 minute)
+-----------------------------------
+Option A - Command Line:
+  mysql -u root -p < health_monitoring.sql
+
+Option B - phpMyAdmin:
+  1. Open phpMyAdmin
+  2. Click "Import" tab
+  3. Choose file: health_monitoring.sql
+  4. Click "Go"
+
+This creates the database with 8 tables and sample data.
+
+
+STEP 2: CONFIGURE DATABASE CONNECTION (30 seconds)
+---------------------------------------------------
+Edit file: public/config/Database.php
+
+Change these lines (around line 8-11):
+
+  private $host = 'localhost';        // Your MySQL host
+  private $db_name = 'health_monitoring';  // Database name
+  private $username = 'root';         // MySQL username
+  private $password = '';             // MySQL password
+
+Save the file.
+
+
+STEP 3: ACCESS THE SYSTEM (10 seconds)
+---------------------------------------
+1. Start your web server (Apache/Nginx)
+2. Point Document Root to the "public/" folder
+3. Open browser: http://localhost/login.php
+
+DEMO CREDENTIALS:
+  Admin:   username: admin   password: admin123
+  Input:   username: input   password: input123
+  Viewer:  username: viewer  password: viewer123
+
+================================================================================
+WEB SERVER CONFIGURATION
+================================================================================
+
+APACHE:
+-------
+The .htaccess file is already included and configured.
+
+Just set your Document Root:
+  DocumentRoot /path/to/health-monitoring-deploy/public
+
+Make sure mod_rewrite is enabled:
+  a2enmod rewrite
+
+And AllowOverride is set to All in your Apache config.
+
+
+NGINX:
+------
+Add this to your server block:
+
+  root /path/to/health-monitoring-deploy/public;
+  
+  location / {
+      try_files $uri $uri/ /index.php?$query_string;
+  }
+
+
+LOCAL TESTING (PHP Built-in Server):
+-------------------------------------
+  php -S localhost:8000 -t public/
+  
+Then open: http://localhost:8000
+
+================================================================================
+FIRST THINGS TO TRY
+================================================================================
+
+1. VIEW THE DASHBOARD
+   - See statistics and recent evaluations
+   - Navigate using the left sidebar
+
+2. CREATE AN EVALUATION
+   - Click "New Evaluation" button
+   - Select a facility
+   - Click "Create Evaluation"
+
+3. ENTER SCORES (The Magic Part!)
+   - Open an evaluation
+   - DOUBLE-CLICK any score cell
+   - Type a number (0-100)
+   - Press ENTER or click outside
+   - Watch it save automatically!
+
+4. ADD SIGNATURES
+   - Scroll to "Approval & Signatures" section
+   - Enter names and dates
+   - Upload signature images (optional)
+
+5. PRINT/EXPORT
+   - Click "Print" button
+   - Save as PDF or print to paper
+
+================================================================================
+FILE STRUCTURE
+================================================================================
+
+health-monitoring-deploy/
+├── public/                         ← WEB ROOT (point server here)
+│   ├── config/                     ← Configuration files
+│   │   ├── Database.php            ← Database connection
+│   │   ├── Auth.php                ← Authentication
+│   │   ├── EvaluationManager.php   ← Evaluation logic
+│   │   ├── FacilityManager.php     ← Facility logic
+│   │   └── QueryHelper.php         ← Query utilities
+│   │
+│   ├── api/                        ← AJAX endpoints
+│   │   ├── save_score.php          ← Save scores
+│   │   ├── get_evaluation_data.php ← Load data
+│   │   └── ... (more)
+│   │
+│   ├── css/
+│   │   └── styles.css              ← Styles
+│   │
+│   ├── images/                     ← Logos and images
+│   │
+│   └── [PHP PAGES]                 ← Application pages
+│       ├── dashboard.php           ← Main dashboard
+│       ├── evaluation-view.php     ← Spreadsheet interface
+│       ├── login.php               ← Login page
+│       └── ... (more)
+│
+├── health_monitoring.sql           ← Database + sample data
+├── README_DEPLOY.txt               ← Main documentation
+├── DEPLOYMENT_CHECKLIST.txt        ← Setup checklist
+└── .htaccess                       ← Apache config
+
+================================================================================
+KEY FEATURES
+================================================================================
+
+✓ Spreadsheet-style interface (double-click to edit)
+✓ Real-time AJAX saving (no page reload)
+✓ Role-based access control (Admin, Input, Viewer)
+✓ Digital signatures (5 types with e-signatures)
+✓ Complete audit logging
+✓ 7 Building Blocks with 163 KPIs
+✓ Multi-facility support
+✓ Print to PDF / Word export
+✓ Mobile responsive design
+
+================================================================================
+USER ROLES
+================================================================================
+
+ADMIN (admin / admin123):
+  ✓ Full system access
+  ✓ Manage users and facilities
+  ✓ View audit logs
+  ✓ Create/edit all evaluations
+  ✓ Generate reports
+
+INPUT USER (input / input123):
+  ✓ Create new evaluations
+  ✓ Edit assigned facility evaluations
+  ✓ Add signatures
+  ✗ Cannot manage users/facilities
+
+VIEWER (viewer / viewer123):
+  ✓ View completed evaluations
+  ✓ Print evaluations
+  ✗ Cannot create or edit
+  ✗ No admin features
+
+================================================================================
+BUILDING BLOCKS (Health System Components)
+================================================================================
+
+1. Leadership and Governance (15%)
+2. Regulation (15%)
+3. Health Financing (15%)
+4. Human Resource for Health (15%)
+5. Health Service Delivery (15%)
+6. Information Communication and Technology (25%)
+7. Special Indicator (0%)
+
+Total: 163 Key Performance Indicators (KPIs)
+
+================================================================================
+SECURITY FEATURES
+================================================================================
+
+✓ Bcrypt password hashing
+✓ PDO prepared statements (SQL injection prevention)
+✓ HTTP-only session cookies
+✓ SameSite cookie policy
+✓ Role-based access control on every page
+✓ Input validation and sanitization
+✓ Comprehensive audit logging
+✓ Error logging (not shown to users)
+
+FOR PRODUCTION:
+  - Enable HTTPS (SSL certificate)
+  - Change default passwords
+  - Set up regular backups
+  - Remove test.php and diagnose.php
+
+================================================================================
+TROUBLESHOOTING
+================================================================================
+
+DATABASE CONNECTION ERROR:
+  → Check MySQL is running
+  → Verify credentials in public/config/Database.php
+  → Test: mysql -u root -p health_monitoring
+
+LOGIN FAILS:
+  → Clear browser cookies
+  → Verify users exist in database
+  → Check is_active = 1 in users table
+
+AJAX NOT WORKING:
+  → Open browser console (F12)
+  → Check for JavaScript errors
+  → Verify public/api/ files exist
+
+SCORES WON'T SAVE:
+  → Check user role (must be admin or input)
+  → Evaluation status must be 'draft'
+  → Check browser console for errors
+
+PAGE NOT FOUND (404):
+  → Verify Document Root points to public/
+  → Check .htaccess exists (Apache)
+  → Review web server config
+
+================================================================================
+MAINTENANCE
+================================================================================
+
+BACKUP DATABASE:
+  mysqldump -u root -p health_monitoring > backup_$(date +%Y%m%d).sql
+
+RESTORE DATABASE:
+  mysql -u root -p health_monitoring < backup_20260101.sql
+
+REGULAR TASKS:
+  Weekly:   Review audit logs
+  Monthly:  Verify backups
+  Quarterly: Archive old evaluations
+  Yearly:   Update KPIs
+
+================================================================================
+SUPPORT & DOCUMENTATION
+================================================================================
+
+Full documentation: README_DEPLOY.txt
+Setup checklist: DEPLOYMENT_CHECKLIST.txt
+Code comments: Check PHP files for inline documentation
+
+For technical issues:
+  1. Check PHP error logs
+  2. Review database logs
+  3. Check browser console (F12)
+  4. Review system audit logs
+
+================================================================================
+YOU'RE ALL SET!
+================================================================================
+
+Everything is ready to use. No errors. No dependencies. No waiting.
+
+Just follow the 3 steps above and you're good to go!
+
+Username: admin
+Password: admin123
+
+================================================================================
+
+Built with ❤️ for Public Health
+Republic of the Philippines - Department of Health
+Health Performance Monitoring System v1.0
+
+================================================================================
